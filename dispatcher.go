@@ -57,6 +57,14 @@ type EventDispatcher struct {
 }
 
 
+// Forces the instance to be aware of event dispatcher
+type DispatcherAware interface {
+	
+	// Dispatcher provides the event dispatcher instance pointer
+	Dispatcher () *Dispatcher
+}
+
+
 // On registers a listener for given event name.
 func (d *EventDispatcher) On (n string, l Listener) {
 	d.Lock()
