@@ -15,7 +15,7 @@ const (
 
 func TestOnOff (t *testing.T) {
 	assert := assert.New(t)
-	d := newDispatcher()
+	d := NewDispatcher()
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("No listeners assigned yet for %s!", TestEventName))
 	l := func (e Event) {
 		fmt.Sprintf("Event name: %s", e.Name())
@@ -28,7 +28,7 @@ func TestOnOff (t *testing.T) {
 
 func TestOnce (t *testing.T) {
 	assert := assert.New(t)
-	d := newDispatcher()
+	d := NewDispatcher()
 	d.Once(TestEventName, func (e Event) {
 		fmt.Sprintf("Event name: %s", e.Name())
 	})
@@ -41,7 +41,7 @@ func TestOnce (t *testing.T) {
 
 func TestDispatch (t *testing.T) {
 	assert := assert.New(t)
-	d := newDispatcher()
+	d := NewDispatcher()
 	var c int
 	c = 0
 	for i := 1;  i<=5; i++ {
@@ -57,7 +57,7 @@ func TestDispatch (t *testing.T) {
 
 func TestOffAll (t *testing.T) {
 	assert := assert.New(t)
-	d := newDispatcher()
+	d := NewDispatcher()
 	var c int
 	c = 0
 	for i := 1;  i<=5; i++ {
@@ -71,8 +71,10 @@ func TestOffAll (t *testing.T) {
 }
 
 
-func newDispatcher () *EventDispatcher {
-	return &EventDispatcher{
-		listeners : make(map[string]listenersCollection),
-	}
+func TestGetDispatcher (t *testing.T) {
+	assert := assert.New(t)
+	d := GetDispatcher(nil)
+	dn := GetDispatcher(nil)
+	assert.Equal(d, dn, "The event dispatchers should be the same instance pointers!")
+	_ = GetDispatcher("foo")
 }

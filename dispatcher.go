@@ -8,6 +8,11 @@ import (
 )
 
 
+const (
+	DefaultDispatcherKey = "event_dispatcher"
+)
+
+
 // Dispatcher interface defines the event dispatcher behavior
 type Dispatcher interface {
 	
@@ -139,5 +144,45 @@ func doDispatch (d *EventDispatcher, e Event) Event {
 	}
 	
 	return e
+}
+
+
+// Inner registry of event dispatcher instances
+var dispatchers map[string]*EventDispatcher
+
+
+
+// Provides event dispatcher for given key string. If the 
+// key string is nil, takes the default key
+func GetDispatcher (k interface{}) *EventDispatcher {
+	var key string
+	if (dispatchers == nil) {
+		dispatchers = make(map[string]*EventDispatcher)
+	}
+	if k == nil {
+		key = DefaultDispatcherKey
+	} else {
+		key = k.(string)
+	}
+	
+	return doGetDispatcher (key)
+}
+
+
+func doGetDispatcher (k string) *EventDispatcher {
+	d, ok := dispatchers[k]
+	if (ok == false) {
+		dispatchers[k] = NewDispatcher()
+		d = dispatchers[k]
+	}
+	return d
+}
+
+
+// NewDispatcher creates a new instance of event dispatcher
+func NewDispatcher () *EventDispatcher {
+	return &EventDispatcher{
+		listeners : make(map[string]listenersCollection),
+	}
 }
 
