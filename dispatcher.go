@@ -61,14 +61,14 @@ type EventDispatcher struct {
 type DispatcherAware interface {
 	
 	// Dispatcher provides the event dispatcher instance pointer
-	Dispatcher () *Dispatcher
+	Dispatcher () Dispatcher
 }
 
 
 // On registers a listener for given event name.
 func (d *EventDispatcher) On (n string, l Listener) {
-	d.Lock()
-	defer d.Unlock()
+	d.RWMutex.Lock()
+	defer d.RWMutex.Unlock()
 	d.listeners[n] = append(d.listeners[n], l)
 }
 
@@ -87,7 +87,7 @@ func executeRemove (d *EventDispatcher, n string, l Listener) Listener {
 	var nl func (e Event)
 	nl = func (e Event) {
 		l(e)
-		d.RUnlock() // The dispatcher is locked in the Dispatch method, need to unlock it
+		d.RWMutex.RUnlock() // The dispatcher is locked in the Dispatch method, need to unlock it
 		d.Off(n, nl)
 	}
 	
@@ -97,8 +97,8 @@ func executeRemove (d *EventDispatcher, n string, l Listener) Listener {
 
 // Off removes the registered event listener for given event name.
 func (d *EventDispatcher) Off (n string, l Listener) {
-	d.Lock()
-	defer d.Unlock()
+	d.RWMutex.Lock()
+	defer d.RWMutex.Unlock()
 	
 	p := reflect.ValueOf(l).Pointer()
 
@@ -114,8 +114,8 @@ func (d *EventDispatcher) Off (n string, l Listener) {
 
 // RemoveAll removes all listeners for given name.
 func (d *EventDispatcher) OffAll (n string) {
-	d.Lock()
-	defer d.Unlock()
+	d.RWMutex.Lock()
+	defer d.RWMutex.Unlock()
 	
 	_, ok := d.listeners[n]
 	if ok != false {
@@ -139,8 +139,8 @@ func (d *EventDispatcher) HasListeners (n string) bool {
 
 // Dispatch dispatches the event and returns it after all listeners do their jobs
 func (d *EventDispatcher) Dispatch (e Event) Event {
-	d.RLock()
-	defer d.RUnlock()
+	d.RWMutex.RLock()
+	defer d.RWMutex.RUnlock()
 	
 	return doDispatch(d, e)
 }
