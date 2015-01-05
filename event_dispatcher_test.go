@@ -3,21 +3,20 @@
 package eventdispatcher
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 const (
 	TestEventName = "test_event"
 )
 
-
-func TestOnOff (t *testing.T) {
+func TestOnOff(t *testing.T) {
 	assert := assert.New(t)
 	d := NewDispatcher()
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("No listeners assigned yet for %s!", TestEventName))
-	l := func (e Event) {
+	l := func(e Event) {
 		fmt.Sprintf("Event name: %s", e.Name())
 	}
 	d.On(TestEventName, l)
@@ -26,10 +25,10 @@ func TestOnOff (t *testing.T) {
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("No listeners assigned for %s!", TestEventName))
 }
 
-func TestOnce (t *testing.T) {
+func TestOnce(t *testing.T) {
 	assert := assert.New(t)
 	d := NewDispatcher()
-	d.Once(TestEventName, func (e Event) {
+	d.Once(TestEventName, func(e Event) {
 		fmt.Sprintf("Event name: %s", e.Name())
 	})
 	assert.True(d.HasListeners(TestEventName), fmt.Sprintf("There should be one listener assigned for one call for %s!", TestEventName))
@@ -38,14 +37,13 @@ func TestOnce (t *testing.T) {
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("The listener called should unbind itself for %s!", TestEventName))
 }
 
-
-func TestDispatch (t *testing.T) {
+func TestDispatch(t *testing.T) {
 	assert := assert.New(t)
 	d := NewDispatcher()
 	var c int
 	c = 0
-	for i := 1;  i<=5; i++ {
-		d.On(TestEventName, func (e Event) {
+	for i := 1; i <= 5; i++ {
+		d.On(TestEventName, func(e Event) {
 			c++
 		})
 	}
@@ -54,14 +52,13 @@ func TestDispatch (t *testing.T) {
 	assert.Equal(5, c, "Invalid listeners calls number!")
 }
 
-
-func TestOffAll (t *testing.T) {
+func TestOffAll(t *testing.T) {
 	assert := assert.New(t)
 	d := NewDispatcher()
 	var c int
 	c = 0
-	for i := 1;  i<=5; i++ {
-		d.On(TestEventName, func (e Event) {
+	for i := 1; i <= 5; i++ {
+		d.On(TestEventName, func(e Event) {
 			c++
 		})
 	}
@@ -70,8 +67,7 @@ func TestOffAll (t *testing.T) {
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("All event listeners for %s should be removed!", TestEventName))
 }
 
-
-func TestGetDispatcher (t *testing.T) {
+func TestGetDispatcher(t *testing.T) {
 	assert := assert.New(t)
 	d := GetDispatcher(nil)
 	dn := GetDispatcher(nil)

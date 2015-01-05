@@ -7,47 +7,38 @@ import (
 	"sync"
 )
 
-
 const (
 	DefaultDispatcherKey = "event_dispatcher"
 )
 
-
 // Dispatcher interface defines the event dispatcher behavior
 type Dispatcher interface {
-	
+
 	// Dispatch dispatches the event and returns it after all listeners do
 	// their jobs.
-	Dispatch (e Event) Event
-	
-	
+	Dispatch(e Event) Event
+
 	// On registers a listener for given event name.
-	On (n string, l Listener)
-	
-	
+	On(n string, l Listener)
+
 	// Once registers a listener to be executed only once. The first param
 	// n is the name of the event the listener will listen on, second is
 	// the Listener type function.
-	Once (n string, l Listener)
-	
-	
+	Once(n string, l Listener)
+
 	// Off removes the registered event listener for given event name.
-	Off (n string, l Listener)
-	
-	
+	Off(n string, l Listener)
+
 	// RemoveAll removes all listeners for given name.
-	OffAll (n string)
-	
-	
+	OffAll(n string)
+
 	// HasListeners returns true if any listener for given event name has
 	// been assigned and false otherwise. This applies also to once triggered
 	// listeners registered with `One` method
-	HasListeners (n string) bool
+	HasListeners(n string) bool
 }
 
-
 type listenersCollection []Listener
-
 
 // The EventDispatcher type is the default implementation of the
 // DispatcherInterface
@@ -56,50 +47,45 @@ type EventDispatcher struct {
 	listeners map[string]listenersCollection
 }
 
-
 // Forces the instance to be aware of event dispatcher
 type DispatcherAware interface {
-	
+
 	// Dispatcher provides the event dispatcher instance pointer
-	Dispatcher () Dispatcher
+	Dispatcher() Dispatcher
 }
 
-
 // On registers a listener for given event name.
-func (d *EventDispatcher) On (n string, l Listener) {
+func (d *EventDispatcher) On(n string, l Listener) {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
 	d.listeners[n] = append(d.listeners[n], l)
 }
 
-
 // Once registers a listener to be executed only once. The first param
 // n is the name of the event the listener will listen on, second is
 // the Listener type function.
-func (d *EventDispatcher) Once (n string, l Listener) {
-	nl := executeRemove(d, n, l); 	// Create a new listener that removes
-									// given listener after calling it
+func (d *EventDispatcher) Once(n string, l Listener) {
+	nl := executeRemove(d, n, l) // Create a new listener that removes
+	// given listener after calling it
 	d.On(n, nl)
 }
 
-
-func executeRemove (d *EventDispatcher, n string, l Listener) Listener {
-	var nl func (e Event)
-	nl = func (e Event) {
+func executeRemove(d *EventDispatcher, n string, l Listener) Listener {
+	var nl func(e Event)
+	nl = func(e Event) {
 		l(e)
 		d.RWMutex.RUnlock() // The dispatcher is locked in the Dispatch method, need to unlock it
 		d.Off(n, nl)
 	}
-	
+
 	return nl
 }
 
-
 // Off removes the registered event listener for given event name.
-func (d *EventDispatcher) Off (n string, l Listener) {
+func (d *EventDispatcher) Off(n string, l Listener) {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
-	
+
 	p := reflect.ValueOf(l).Pointer()
 
 	listeners := d.listeners[n]
@@ -111,60 +97,53 @@ func (d *EventDispatcher) Off (n string, l Listener) {
 	}
 }
 
-
 // RemoveAll removes all listeners for given name.
-func (d *EventDispatcher) OffAll (n string) {
+func (d *EventDispatcher) OffAll(n string) {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
-	
+
 	_, ok := d.listeners[n]
 	if ok != false {
 		delete(d.listeners, n)
 	}
 }
 
-
 // HasListeners returns true if any listener for given event name has
 // been assigned and false otherwise. This applies also to once triggered
 // listeners registered with `One` method
-func (d *EventDispatcher) HasListeners (n string) bool {
+func (d *EventDispatcher) HasListeners(n string) bool {
 	listeners, ok := d.listeners[n]
 	if ok == false {
 		return false
 	}
-	
+
 	return len(listeners) != 0
 }
 
-
 // Dispatch dispatches the event and returns it after all listeners do their jobs
-func (d *EventDispatcher) Dispatch (e Event) Event {
+func (d *EventDispatcher) Dispatch(e Event) Event {
 	d.RWMutex.RLock()
 	defer d.RWMutex.RUnlock()
-	
+
 	return doDispatch(d, e)
 }
 
-
-func doDispatch (d *EventDispatcher, e Event) Event {
+func doDispatch(d *EventDispatcher, e Event) Event {
 	for _, l := range d.listeners[e.Name()] {
 		l(e)
 	}
-	
+
 	return e
 }
-
 
 // Inner registry of event dispatcher instances
 var dispatchers map[string]*EventDispatcher
 
-
-
-// Provides event dispatcher for given key string. If the 
+// Provides event dispatcher for given key string. If the
 // key string is nil, takes the default key
-func GetDispatcher (k interface{}) *EventDispatcher {
+func GetDispatcher(k interface{}) *EventDispatcher {
 	var key string
-	if (dispatchers == nil) {
+	if dispatchers == nil {
 		dispatchers = make(map[string]*EventDispatcher)
 	}
 	if k == nil {
@@ -172,25 +151,22 @@ func GetDispatcher (k interface{}) *EventDispatcher {
 	} else {
 		key = k.(string)
 	}
-	
-	return doGetDispatcher (key)
+
+	return doGetDispatcher(key)
 }
 
-
-func doGetDispatcher (k string) *EventDispatcher {
+func doGetDispatcher(k string) *EventDispatcher {
 	d, ok := dispatchers[k]
-	if (ok == false) {
+	if ok == false {
 		dispatchers[k] = NewDispatcher()
 		d = dispatchers[k]
 	}
 	return d
 }
 
-
 // NewDispatcher creates a new instance of event dispatcher
-func NewDispatcher () *EventDispatcher {
+func NewDispatcher() *EventDispatcher {
 	return &EventDispatcher{
-		listeners : make(map[string]listenersCollection),
+		listeners: make(map[string]listenersCollection),
 	}
 }
-

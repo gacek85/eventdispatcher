@@ -2,6 +2,5 @@
 // reliable event dispatcher
 package eventdispatcher
 
-
 // Listener type for defining functions as listeners
-type Listener func (Event)
+type Listener func(Event)
