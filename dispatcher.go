@@ -11,6 +11,9 @@ const (
 	DefaultDispatcherKey = "event_dispatcher"
 )
 
+// Listener type for defining functions as listeners
+type Listener func(Event)
+
 // Dispatcher interface defines the event dispatcher behavior
 type Dispatcher interface {
 
@@ -76,6 +79,7 @@ func executeRemove(d *EventDispatcher, n string, l Listener) Listener {
 		l(e)
 		d.RWMutex.RUnlock() // The dispatcher is locked in the Dispatch method, need to unlock it
 		d.Off(n, nl)
+		d.RWMutex.RLock()
 	}
 
 	return nl
