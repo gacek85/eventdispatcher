@@ -25,6 +25,30 @@ func TestOnOff(t *testing.T) {
 	assert.False(d.HasListeners(TestEventName), fmt.Sprintf("No listeners assigned for %s!", TestEventName))
 }
 
+func TestOnMany(t *testing.T) {
+	assert := assert.New(t)
+	d := NewDispatcher()
+	var count int32
+	count = 0
+	d.On("event_1 event_2   event_3", func(e Event) {
+		count++
+	})
+	e1 := NewParamsEvent("event_1")
+	e2 := NewParamsEvent("event_2")
+	e3 := NewParamsEvent("event_3")
+	d.Dispatch(e1)
+	d.Dispatch(e2)
+	d.Dispatch(e3)
+	assert.Equal(3, count)
+
+	d.OffAll("event_1")
+	d.OffAll("event_2")
+	d.Dispatch(e1)
+	d.Dispatch(e2)
+	d.Dispatch(e3)
+	assert.Equal(4, count)
+}
+
 func TestOnce(t *testing.T) {
 	assert := assert.New(t)
 	d := NewDispatcher()

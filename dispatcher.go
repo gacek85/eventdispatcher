@@ -4,6 +4,7 @@ package eventdispatcher
 
 import (
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -59,6 +60,28 @@ type DispatcherAware interface {
 
 // On registers a listener for given event name.
 func (d *EventDispatcher) On(n string, l Listener) {
+	names := getNames(n)
+	for _, name := range names {
+		on(d, name, l)
+	}
+}
+
+// getNames splits the given n string with space and returns a slice of
+// event names strings
+func getNames(n string) []string {
+	names := strings.Split(n, " ")
+	var results []string
+	for _, name := range names {
+		if name != "" {
+			results = append(results, name)
+		}
+	}
+
+	return results
+}
+
+// on binds listener to given event name n
+func on(d *EventDispatcher, n string, l Listener) {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
 	d.listeners[n] = append(d.listeners[n], l)
@@ -68,9 +91,11 @@ func (d *EventDispatcher) On(n string, l Listener) {
 // n is the name of the event the listener will listen on, second is
 // the Listener type function.
 func (d *EventDispatcher) Once(n string, l Listener) {
-	nl := executeRemove(d, n, l) // Create a new listener that removes
-	// given listener after calling it
-	d.On(n, nl)
+	names := getNames(n)
+	for _, name := range names {
+		nl := executeRemove(d, name, l) // Create a new listener that removes given listener after calling it
+		on(d, n, nl)
+	}
 }
 
 func executeRemove(d *EventDispatcher, n string, l Listener) Listener {
@@ -129,10 +154,12 @@ func (d *EventDispatcher) Dispatch(e Event) Event {
 	d.RWMutex.RLock()
 	defer d.RWMutex.RUnlock()
 
-	return doDispatch(d, e)
+	return dispatch(d, e)
 }
 
-func doDispatch(d *EventDispatcher, e Event) Event {
+// dispatch takes all registered listeners for given event name
+// and dispatches the event
+func dispatch(d *EventDispatcher, e Event) Event {
 	for _, l := range d.listeners[e.Name()] {
 		l(e)
 	}
@@ -143,7 +170,7 @@ func doDispatch(d *EventDispatcher, e Event) Event {
 // Inner registry of event dispatcher instances
 var dispatchers map[string]*EventDispatcher
 
-// Provides event dispatcher for given key string. If the
+// GetDispatcher provides event dispatcher for given key string. If the
 // key string is nil, takes the default key
 func GetDispatcher(k interface{}) *EventDispatcher {
 	var key string
@@ -156,10 +183,10 @@ func GetDispatcher(k interface{}) *EventDispatcher {
 		key = k.(string)
 	}
 
-	return doGetDispatcher(key)
+	return getDispatcher(key)
 }
 
-func doGetDispatcher(k string) *EventDispatcher {
+func getDispatcher(k string) *EventDispatcher {
 	d, ok := dispatchers[k]
 	if ok == false {
 		dispatchers[k] = NewDispatcher()
